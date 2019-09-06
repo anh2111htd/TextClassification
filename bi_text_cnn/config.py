@@ -1,5 +1,5 @@
 class Config(object):
-    embed_size = 300
+    embed_size = 50
     num_channels = 100
     kernel_size = [3, 4, 5]
     output_size = 4

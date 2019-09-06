@@ -5,7 +5,7 @@ import torch.optim as optim
 
 
 def train_text_cnn(train_file="data/data.train", test_file="data/data.test",
-                   w2v_file="data/glove.840B.300d.txt"):
+                   w2v_file="data/glove.6B.50d.txt"):
     config = Config()
 
     dataset = Dataset(config)
@@ -16,7 +16,7 @@ def train_text_cnn(train_file="data/data.train", test_file="data/data.test",
         model.cuda()
     model.train()
     optimizer = optim.SGD(model.parameters(), lr=config.lr)
-    NLLLoss = nn.NLLLoss()
+    NLLLoss = nn.CrossEntropyLoss()
     model.add_optimizer(optimizer)
     model.add_loss_op(NLLLoss)
     ##############################################################

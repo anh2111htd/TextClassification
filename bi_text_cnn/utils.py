@@ -30,7 +30,7 @@ class Dataset(object):
         :param filepath:
         :return:
         """
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding="utf-8") as f:
             data = [line.strip().split('\t') for line in f]
             data_source = list(map(lambda x: x[0], data))
             data_target = list(map(lambda x: x[1], data)) 
