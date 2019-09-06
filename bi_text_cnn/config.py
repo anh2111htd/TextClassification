@@ -8,5 +8,5 @@ class Config(object):
     batch_size = 64
     max_sen_len = 30
     dropout_keep = 0.8
-
+    read_out_size = 16
     split_ratio = 0.8

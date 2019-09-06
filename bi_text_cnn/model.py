@@ -35,29 +35,31 @@ class BiTextCNN(nn.Module):
         self.dropout = nn.Dropout(self.config.dropout_keep)
 
         # Fully-Connected Layer
-        self.fc = nn.Linear(self.config.num_channels * len(self.config.kernel_size), self.config.output_size)
+        self.fc1 = nn.Linear(self.config.num_channels * len(self.config.kernel_size), self.config.read_out_size)
+        self.fc2 = nn.Linear(self.config.read_out_size * 2, self.config.output_size)
 
         # Softmax non-linearity
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
         self.relu = nn.ReLU()
 
     def forward(self, x_source, x_target):
         embedded_source, embedded_target = self.embeddings(x_source).permute(1, 2, 0), \
-                                           self.embeddings(x_target).permute(1, 2, 0)
+                                           self.embeddings(x_target).permute(1, 2, 0) 
+        # return self.softmax(torch.ones((x_source.size()[1], self.config.output_size), device=torch.device('cuda'), requires_grad=True))
         source_read_out = self.forward_single(embedded_source)
         target_read_out = self.forward_single(embedded_target)
         final_read_out = torch.cat((source_read_out, target_read_out), 1)
-        output = self.softmax(self.fc(final_read_out))
+        output = self.softmax(self.fc2(final_read_out))
         return output
 
-    def forward_single(self, embedded_sent):
-        conv_out1 = self.conv1(embedded_sent).squeeze(2)  # shape=(64, num_channels, 1) (squeeze 1)
+    def forward_single(self, embedded_sent): 
+        conv_out1 = self.conv1(embedded_sent).squeeze(2)
         conv_out2 = self.conv2(embedded_sent).squeeze(2)
         conv_out3 = self.conv3(embedded_sent).squeeze(2)
 
         all_out = torch.cat((conv_out1, conv_out2, conv_out3), 1)
         final_feature_map = self.dropout(all_out)
-        final_out = self.fc(final_feature_map)
+        final_out = self.fc1(final_feature_map)
         return self.relu(final_out)
 
     def add_optimizer(self, optimizer):

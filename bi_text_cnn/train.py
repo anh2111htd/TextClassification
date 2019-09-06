@@ -4,8 +4,8 @@ from bi_text_cnn.utils import *
 import torch.optim as optim
 
 
-def train_text_cnn(train_file="../data/data.train", test_file="../data/data.test",
-                   w2v_file="../data/glove.840B.300d.txt"):
+def train_text_cnn(train_file="data/data.train", test_file="data/data.test",
+                   w2v_file="data/glove.840B.300d.txt"):
     config = Config()
 
     dataset = Dataset(config)

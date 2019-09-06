@@ -32,9 +32,9 @@ class Dataset(object):
         """
         with open(filepath, 'r') as f:
             data = [line.strip().split('\t') for line in f]
-            data_source = list(map(lambda x: x[1], data))
-            data_target = list(map(lambda x: x[2], data))
-            data_label = list(map(lambda x: self.parse_label(x[0]), data))
+            data_source = list(map(lambda x: x[0], data))
+            data_target = list(map(lambda x: x[1], data)) 
+            data_label = list(map(lambda x: self.parse_label(x[2]), data))
         full_df = pd.DataFrame({"source": data_source, "target": data_target, "label": data_label})
         return full_df
 
@@ -75,14 +75,14 @@ class Dataset(object):
 
         SOURCE_TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
         TARGET_TEXT.build_vocab(train_data, vectors=Vectors(w2v_file))
-        total_vocab = SOURCE_TEXT.vocab.extend(TARGET_TEXT.vocab)
-        self.word_embeddings = total_vocab.vocab.vectors
-        self.vocab = total_vocab.vocab
+        SOURCE_TEXT.vocab.extend(TARGET_TEXT.vocab)
+        self.word_embeddings = SOURCE_TEXT.vocab.vectors
+        self.vocab = SOURCE_TEXT.vocab
 
         self.train_iterator = data.BucketIterator(
             train_data,
             batch_size=self.config.batch_size,
-            sort_key=lambda x: len(x.text),
+            sort_key=lambda x: len(x.source) + len(x.target),
             repeat=False,
             shuffle=True
         )
@@ -90,7 +90,7 @@ class Dataset(object):
         self.validate_iterator, self.test_iterator = data.BucketIterator.splits(
             (val_data, test_data),
             batch_size=self.config.batch_size,
-            sort_key=lambda x: len(x.text),
+            sort_key=lambda x: len(x.source) + len(x.target),
             repeat=False,
             shuffle=False)
 
@@ -104,10 +104,10 @@ def evaluate_model(model, iterator):
     all_y = []
     for idx, batch in enumerate(iterator):
         if torch.cuda.is_available():
-            x = batch.text.cuda()
+            x_source, x_target = batch.source.cuda(), batch.target.cuda()
         else:
-            x = batch.text
-        y_pred = model(x)
+            x_source, x_target = batch.source, batch.target
+        y_pred = model(x_source, x_target) 
         predicted = torch.max(y_pred.cpu().data, 1)[1] + 1
         all_preds.extend(predicted.numpy())
         all_y.extend(batch.label.numpy())
