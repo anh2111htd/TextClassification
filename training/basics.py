@@ -51,7 +51,7 @@ def run_basics(exp_name, model, dataset, fetch_batch_fn, config):
     device = torch.device("cuda:0" if config.use_cuda else "cpu")
     writer = SummaryWriter(os.path.join(config.log_dir, exp_name))
 
-    best_evaluator = Evaluator(predictions=[], labels=[])
+    best_evaluator, best_output_path = Evaluator(predictions=[], labels=[]), ""
     model.init_word_embeddings(dataset.word_embeddings)
     model.apply(model.init_weights)
     model = model.to(device)
@@ -61,21 +61,21 @@ def run_basics(exp_name, model, dataset, fetch_batch_fn, config):
     for epoch in range(config.epoch_num):
         loss, train_evaluator = train_fn(model, optimizer, dataset.train_iterator,
                                          fetch_batch_fn, device, config)
-        print("Finish training {} epochs, loss: {}".format(epoch, loss))
+        print("Finish training {} epochs, loss: {}.".format(epoch, loss))
         train_result = train_evaluator.evaluate(config.metrics)
         writer.add_scalars("train", train_result, epoch)
 
         if epoch % config.eval_every_epoch_num == 0:
             validate_loss, validate_evaluator = eval_fn(model, dataset.validate_iterator,
                                                         fetch_batch_fn, device, config)
-            print("Finish validating {} epochs, loss: {}".format(epoch, validate_loss))
+            print("Finish validating {} epochs, loss: {}.".format(epoch, validate_loss))
             validate_result = validate_evaluator.evaluate(config.metrics)
             writer.add_scalars("validate", validate_result, epoch)
 
             if validate_evaluator.is_better_than(best_evaluator, config.metrics):
                 print("Best evaluator is updated.")
                 best_evaluator = validate_evaluator
-                save_model_checkpoint(state=dict(
+                best_output_path = save_model_checkpoint(state=dict(
                     epoch=epoch,
                     state_dict=dict([(key, value.to("cpu")) for key, value in model.state_dict().items()]),
                     ),
@@ -95,8 +95,14 @@ def run_basics(exp_name, model, dataset, fetch_batch_fn, config):
                 exp_name=exp_name,
                 step=epoch
             )
-
+    print("Training completed, start testing best model from {}.".format(best_output_path))
+    model.load_state_dict(torch.load(best_output_path)["state_dict"])
+    test_loss, test_evaluator = eval_fn(model, dataset.test_iterator,
+                                        fetch_batch_fn, device, config)
+    print("Finish testing, loss: {}.".format(test_loss))
+    test_evaluator.evaluate(config.metrics)
     writer.close()
+    return best_output_path
 
 
 def train_fn(model, optimizer, train_iterator, fetch_batch_fn, device, config):
@@ -105,11 +111,11 @@ def train_fn(model, optimizer, train_iterator, fetch_batch_fn, device, config):
     batch_idx = 0
     predictions, labels = [], []
 
-    for batch_idx, batch in enumerate(train_iterator):
+    for batch in train_iterator:
         with torch.set_grad_enabled(True):
-            label = (batch.label - 1).type(torch.LongTensor).to(device)
+            label = batch.label.type(torch.LongTensor).to(device)
             logit = model(*fetch_batch_fn(batch, device))
-            pred = torch.max(logit.cpu().data, 1)[1] + 1
+            pred = torch.max(logit.cpu().data, 1)[1]
             loss = model.loss(logit, label)
             predictions.extend(pred.numpy())
             labels.extend(batch.label.numpy())
@@ -139,11 +145,11 @@ def eval_fn(model, eval_iterator, fetch_batch_fn, device, config):
     batch_idx = 0
     predictions, labels = [], []
 
-    for batch_idx, batch in enumerate(eval_iterator):
+    for batch in eval_iterator:
         with torch.set_grad_enabled(False):
-            label = (batch.label - 1).type(torch.LongTensor).to(device)
+            label = batch.label.type(torch.LongTensor).to(device)
             logit = model(*fetch_batch_fn(batch, device))
-            pred = torch.max(logit.cpu().data, 1)[1] + 1
+            pred = torch.max(logit.cpu().data, 1)[1]
             loss = model.loss(logit, label)
             predictions.extend(pred.numpy())
             labels.extend(batch.label.numpy())
@@ -159,3 +165,20 @@ def eval_fn(model, eval_iterator, fetch_batch_fn, device, config):
     eval_evaluator = Evaluator(np.array(predictions).flatten(), labels)
 
     return loss_per_batch, eval_evaluator
+
+
+def infer_basics(model, dataset, fetch_batch_fn, config):
+    device = torch.device("cuda:0" if config.use_cuda else "cpu")
+    model = model.to(device)
+    return infer_fn(model, dataset.infer_iterator, fetch_batch_fn, device)
+
+
+def infer_fn(model, infer_iterator, fetch_batch_fn, device):
+    predictions = []
+    for batch_idx, batch in enumerate(infer_iterator):
+        with torch.set_grad_enabled(False):
+            logit = model(*fetch_batch_fn(batch, device))
+            pred = torch.max(logit.cpu().data, 1)[1]
+            predictions.extend(pred.numpy())
+
+    return predictions

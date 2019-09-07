@@ -11,4 +11,7 @@ def save_model_checkpoint(state, is_best, output_dir, exp_name, step):
         os.makedirs(directory)
     torch.save(state, output_path)
     if is_best:
-        shutil.copyfile(output_path, os.path.join(output_dir, exp_name, "model_ckpt_best.tar".format(step)))
+        best_output_path = os.path.join(output_dir, exp_name, "model_ckpt_best.tar".format(step))
+        shutil.copyfile(output_path, best_output_path)
+        return best_output_path
+    return output_path
