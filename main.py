@@ -1,4 +1,5 @@
-from bi_text_cnn import *
+from tasks import run_stance_detection
+
 
 if __name__ == "__main__":
-    train_text_cnn()
+    run_stance_detection()

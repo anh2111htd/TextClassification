@@ -4,3 +4,5 @@
 .vector_cache/
 *.txt
 data/
+exp_ckpt/
+exp_log/
