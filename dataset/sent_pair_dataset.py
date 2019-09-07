@@ -1,7 +1,6 @@
 import dataset.utils as dataset_utils
 import spacy
 from torchtext import data
-from torchtext.vocab import Vectors
 
 
 class SentPairConfig(object):
@@ -20,7 +19,7 @@ class SentPairDataset(object):
         self.test_iterator = None
         self.validate_iterator = None
         self.vocab = []
-        self.word_embeddings = {}
+        self.word_embeddings = None
         self.preprocessor = spacy.load('en')
 
     @staticmethod
@@ -31,7 +30,7 @@ class SentPairDataset(object):
     def tokenize(self, sent):
         return [x.text for x in self.preprocessor.tokenizer(sent) if x.text != " "]
 
-    def load_data(self, w2v_file, train_file, test_file, val_file=None):
+    def load_data(self, train_file, test_file, embed_size, w2v_file=None, val_file=None):
         source_field = data.Field(sequential=True, tokenize=self.tokenize,
                                   lower=True, fix_length=self.config.max_source_len)
         target_field = data.Field(sequential=True, tokenize=self.tokenize,
@@ -54,11 +53,11 @@ class SentPairDataset(object):
         else:
             train_data, val_data = train_data.split(split_ratio=self.config.train_test_ratio)
 
-        source_field.build_vocab(train_data, vectors=Vectors(w2v_file))
-        target_field.build_vocab(train_data, vectors=Vectors(w2v_file))
+        source_field.build_vocab(train_data)
+        target_field.build_vocab(train_data)
         source_field.vocab.extend(target_field.vocab)
-        self.word_embeddings = source_field.vocab.vectors
         self.vocab = source_field.vocab
+        self.word_embeddings = dataset_utils.init_word_embedding(self.vocab.itos, w2v_file, embed_size)
 
         self.train_iterator = data.BucketIterator(
             train_data,

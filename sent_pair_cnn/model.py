@@ -1,5 +1,5 @@
+import torch
 from torch import nn
-from sent_pair_cnn.utils import *
 
 
 class SentPairCNNConfig(object):
@@ -28,15 +28,10 @@ class SentPairCNNConfig(object):
 
 class SentPairCNN(nn.Module):
 
-    @staticmethod
-    def get_name():
-        return "sent-pair-cnn"
-
-    def __init__(self, config, vocab_size, word_embedings):
+    def __init__(self, config, vocab_size):
         super(SentPairCNN, self).__init__()
         self.config = config
-        self.embeddings = nn.Embedding(vocab_size, self.config.embed_size)
-        self.embeddings.weight = nn.Parameter(word_embedings, requires_grad=False)
+        self.word_embeddings = nn.Embedding(vocab_size, self.config.embed_size)
         self.loss = nn.CrossEntropyLoss()
 
         self.conv1 = nn.Sequential(
@@ -69,8 +64,8 @@ class SentPairCNN(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x_source, x_target):
-        embedded_source, embedded_target = self.embeddings(x_source).permute(1, 2, 0), \
-                                           self.embeddings(x_target).permute(1, 2, 0) 
+        embedded_source, embedded_target = self.word_embeddings(x_source).permute(1, 2, 0), \
+                                           self.word_embeddings(x_target).permute(1, 2, 0)
         source_read_out = self.forward_single(embedded_source)
         target_read_out = self.forward_single(embedded_target)
         final_read_out = torch.cat((source_read_out, target_read_out), 1)
@@ -91,3 +86,11 @@ class SentPairCNN(nn.Module):
     def init_weights(module):
         if isinstance(module, nn.Linear):
             nn.init.normal_(module.weight)
+
+    @classmethod
+    def get_name(cls):
+        return "sent-pair-cnn"
+
+    def init_word_embeddings(self, word_embeddings, freeze=False):
+        word_embeddings_tensor = torch.from_numpy(word_embeddings)
+        self.word_embeddings.from_pretrained(word_embeddings_tensor, freeze=freeze)

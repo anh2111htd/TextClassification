@@ -13,14 +13,15 @@ def run_stance_detection():
     w2v_file = "data/glove.6B.50d.txt"
     max_source_len = 50
     max_target_len = 50
-    train_test_ratio = 0.8
-    batch_size = 64
+    train_test_ratio = 0.5
+    batch_size = 8
     embed_size = 50
     config = SentPairConfig(max_source_len=max_source_len, max_target_len=max_target_len,
                             train_test_ratio=train_test_ratio, batch_size=batch_size)
     stance_dataset = SentPairDataset(config)
     stance_dataset.load_data(train_file=train_file, test_file=test_file,
-                             w2v_file=w2v_file)
+                             w2v_file=w2v_file, embed_size=embed_size)
+    vocab_size = len(stance_dataset.vocab)
 
     # Run config
     run_config = BasicConfig.get_common()
@@ -32,10 +33,9 @@ def run_stance_detection():
     )
     model = SentPairCNN(
         config=model_config,
-        vocab_size=len(stance_dataset.vocab),
-        word_embedings=stance_dataset.word_embeddings)
+        vocab_size=vocab_size)
     fetch_batch_fn = SentPairDataset.fetch_sent_pair_batch_fn
-    exp_name = get_exp_name(task_name, model.get_name())
+    exp_name = get_exp_name(task_name, SentPairCNN.get_name())
 
     run_basics(
         exp_name=exp_name,
