@@ -3,8 +3,9 @@ from torch import nn
 
 
 class SentPairCNNConfig(object):
-    def __init__(self, embed_size, num_channels, kernel_sizes, output_size,
+    def __init__(self, freeze_embed, embed_size, num_channels, kernel_sizes, output_size,
                  max_sen_len, dropout_keep, read_out_size):
+        self.freeze_embed = freeze_embed
         self.embed_size = embed_size
         self.num_channels = num_channels
         self.kernel_size = kernel_sizes
@@ -16,6 +17,7 @@ class SentPairCNNConfig(object):
     @staticmethod
     def get_common(embed_size, output_size, max_sen_len):
         return SentPairCNNConfig(
+            freeze_embed=False,
             embed_size=embed_size,
             num_channels=100,
             kernel_sizes=[3, 4, 5],
@@ -31,8 +33,8 @@ class SentPairCNN(nn.Module):
     def __init__(self, config, vocab_size):
         super(SentPairCNN, self).__init__()
         self.config = config
-        self.word_embeddings = nn.Embedding(vocab_size, self.config.embed_size)
         self.loss = nn.CrossEntropyLoss()
+        self.word_embeddings = nn.Embedding(vocab_size, self.config.embed_size)
 
         self.conv1 = nn.Sequential(
             nn.Conv1d(in_channels=self.config.embed_size, out_channels=self.config.num_channels,
@@ -91,6 +93,11 @@ class SentPairCNN(nn.Module):
     def get_name(cls):
         return "sent-pair-cnn"
 
-    def init_word_embeddings(self, word_embeddings, freeze=False):
+    @staticmethod
+    def fetch_sent_pair_batch_fn(batch, device):
+        x_source, x_target = batch.source.to(device), batch.target.to(device)
+        return x_source, x_target
+
+    def init_word_embeddings(self, word_embeddings):
         word_embeddings_tensor = torch.from_numpy(word_embeddings)
-        self.word_embeddings.from_pretrained(word_embeddings_tensor, freeze=freeze)
+        self.word_embeddings.from_pretrained(word_embeddings_tensor, freeze=self.config.freeze_embed)

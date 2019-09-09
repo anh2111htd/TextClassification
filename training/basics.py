@@ -28,7 +28,7 @@ class BasicConfig(object):
         save_every_epoch_num = 5
         eval_every_epoch_num = 2
         learning_rate = 1e-3
-        epoch_num = 50
+        epoch_num = 30
         metrics = ["accuracy", "precision", "recall", "f1"]
         log_dir = "exp_log/"
         ckpt_dir = "exp_ckpt/"
