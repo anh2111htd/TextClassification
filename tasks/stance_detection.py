@@ -99,7 +99,7 @@ def run_stance_detection(model_name):
     else:
         raise ValueError("Unsupported model {} for stance detection.".format(model_name))
 
-    exp_name = get_exp_name(StanceConfig.task_name, SentPairCNN.get_name())
+    exp_name = get_exp_name(StanceConfig.task_name, model.get_name())
 
     return run_basics(
         exp_name=exp_name,
@@ -110,7 +110,7 @@ def run_stance_detection(model_name):
     )
 
 
-def infer_stance_detection(infer_model_path, infer_file):
+def infer_stance_detection(model_name, infer_model_path, infer_file):
     config = SentPairConfig(max_source_len=StanceConfig.max_source_len, max_target_len=StanceConfig.max_target_len,
                             train_test_ratio=StanceConfig.train_test_ratio, batch_size=StanceConfig.batch_size,
                             max_word_len=StanceConfig.max_word_len)
@@ -121,8 +121,12 @@ def infer_stance_detection(infer_model_path, infer_file):
     loaded_vocab = load_text_as_list(StanceConfig.vocab_output_path)
     loaded_char_vocab = load_text_as_list(StanceConfig.char_vocab_output_path)
 
-    # model, fetch_batch_fn = use_sent_pair_cnn(loaded_vocab)
-    model, fetch_batch_fn = use_bidaf(loaded_vocab, loaded_char_vocab)
+    if model_name == "cnn":
+        model, fetch_batch_fn = use_sent_pair_cnn(loaded_vocab)
+    elif model_name == "bidaf":
+        model, fetch_batch_fn = use_bidaf(loaded_vocab, loaded_char_vocab)
+    else:
+        raise ValueError("Unsupported model {} for stance detection.".format(model_name))
 
     loaded_state_dict = torch.load(infer_model_path)["state_dict"]
     model.load_state_dict(loaded_state_dict)

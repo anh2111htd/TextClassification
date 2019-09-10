@@ -13,13 +13,6 @@ def generate_synthetic_sent_pair_dataset(train_size, num_classes, max_source_len
         target_seed = np.random.randint(1, vocab_size)
         source_sent, target_sent = [source_seed] * source_len, [target_seed] * target_len
         for i in range(1, min(source_len, target_len)):
-            # if source_sent[i - 1] % 3 == 0:
-            #     source_sent[i] = abs(source_sent[i - 1] + target_sent[i - 1] + label) % vocab_size
-            #     target_sent[i] = abs(target_sent[i - 1] + label) % vocab_size
-            # elif source_sent[i - 1] % 3 == 1:
-            #     source_sent[i] = abs(source_sent[i - 1] - target_sent[i - 1] - label) % vocab_size
-            #     target_sent[i] = abs(target_sent[i - 1] - label) % vocab_size
-            # elif source_sent[i - 1] % 3 == 2:
             source_sent[i] = abs((source_sent[i - 1] + target_sent[i - 1]) * label) % vocab_size
             target_sent[i] = abs(target_sent[i - 1] * label) % vocab_size
         train_dataset.append([" ".join([str(x) for x in source_sent]), " ".join([str(x) for x in target_sent]),

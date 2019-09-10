@@ -89,8 +89,7 @@ class SentPairCNN(nn.Module):
         if isinstance(module, nn.Linear):
             nn.init.normal_(module.weight)
 
-    @classmethod
-    def get_name(cls):
+    def get_name(self):
         return "sent-pair-cnn"
 
     @staticmethod

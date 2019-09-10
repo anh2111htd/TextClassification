@@ -14,6 +14,7 @@ def parse_args():
 def stance_detection(model_name):
     best_output_path = run_stance_detection(model_name)
     infer_stance_detection(
+        model_name=model_name,
         infer_model_path=best_output_path,
         infer_file="data/stance.test"
     )
@@ -23,6 +24,7 @@ def synthetic_classification(model_name):
     generate_synthetic_sent_pair()
     best_output_path = run_synthetic_classification(model_name)
     infer_synthetic_classification(
+        model_name=model_name,
         infer_model_path=best_output_path,
         infer_file="data/synthetic.test"
     )

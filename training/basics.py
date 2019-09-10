@@ -23,7 +23,7 @@ class BasicConfig(object):
     @staticmethod
     def get_common(use_cuda=False):
         grad_accumulate_steps = 4
-        max_grad_norm = 10.
+        max_grad_norm = 50.
         inform_every_batch_num = 50
         save_every_epoch_num = 5
         eval_every_epoch_num = 2
