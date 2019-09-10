@@ -1,6 +1,6 @@
 Text Classification
 =======================
-This project includes state-of-the-art implementation of text and text pair classification.
+This project includes state-of-the-art implementations of text and text pair classification.
 
 ## Quick start
 
