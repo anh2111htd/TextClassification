@@ -59,7 +59,7 @@ def use_bidaf(word_vocab, char_vocab):
     return model, partial(BiDAF.fetch_sent_pair_batch_fn, SyntheticConfig.max_word_len)
 
 
-def run_synthetic_classification():
+def run_synthetic_classification(model_name):
 
     # Sentence Pair Dataset config
 
@@ -76,8 +76,12 @@ def run_synthetic_classification():
     # Run config
     run_config = BasicConfig.get_common()
 
-    # model, fetch_batch_fn = use_sent_pair_cnn(stance_dataset.vocab)
-    model, fetch_batch_fn = use_bidaf(stance_dataset.vocab, stance_dataset.char_vocab)
+    if model_name == "cnn":
+        model, fetch_batch_fn = use_sent_pair_cnn(stance_dataset.vocab)
+    elif model_name == "bidaf":
+        model, fetch_batch_fn = use_bidaf(stance_dataset.vocab, stance_dataset.char_vocab)
+    else:
+        raise ValueError("Unsupported model {} for synthetic classification.".format(model_name))
 
     exp_name = get_exp_name(SyntheticConfig.task_name, SentPairCNN.get_name())
 
